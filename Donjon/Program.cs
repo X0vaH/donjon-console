@@ -44,7 +44,7 @@
             new Objet(true, Item.Bloc, (17, 11)),
             new Objet(true, Item.Bloc, (17, 18)),
 
-            new Objet(false, Item.Tortue, (9, 25)),
+            new Objet(false, Item.Tortue, (9, 25))
         });
 }
 
