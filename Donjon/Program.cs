@@ -46,10 +46,36 @@
 
             new Objet(false, Item.Tortue, (9, 25))
         });
+
+        static void AfficherDonjon(Donjon donjon)
+        {
+            throw new NotImplementedException();
+        }
+        
+        /// <sumary>
+        /// Affiche le déplacement de la tortue.
+        /// le héros
+        /// le déplacement
+        /// </sumary>
+        static void DéplacementTortue(Direction direction)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <sumary>
+        /// Affiche le nb de points
+        /// renvoie le nombre de points
+        /// </sumary>
+        static void AfficherPoints(out int nbPoints)
+        {
+            throw new NotImplementedException();
+        }
+
 }
 
 record Donjon(Taille taille, List<Objet> objet);
 record Objet(bool blocBlanc, Item item, (int largeur, int longueur) Position);
 enum Taille { _50x17, _75x25, _80x20 }
 enum Item { Carotte, Tortue, Bloc }
+enum Direction { Bas, Haut, Gauche, Droite }
 
