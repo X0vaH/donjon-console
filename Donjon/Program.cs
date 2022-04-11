@@ -1,81 +1,208 @@
-﻿{
-    Donjon jeu = new(
-        Taille._50x17,
-        new()
+﻿Piloter();
+
+static void Piloter()
+{
+    Console.Clear();
+    int nbTrésors = 10;
+    Position tailleDonjon = DonjonAléatoire(out Position position_heros, out Position[] position_tresors, out Position[] position_blocs);
+    for (; ; )
+    {
+        Console.SetCursorPosition(0, 0);
+        AfficherDonjon(tailleDonjon, position_tresors, position_blocs, position_heros, nbTrésors);
+        position_heros = DéplacerHéros(ref position_tresors, position_blocs, tailleDonjon, position_heros, ref nbTrésors);
+        if (nbTrésors == 0)
         {
-            new Objet(false, Item.Carotte, (1, 20)),
-            new Objet(false, Item.Carotte, (2, 35)),
-            new Objet(false, Item.Carotte, (3, 50)),
-            new Objet(false, Item.Carotte, (5, 8)),
-            new Objet(false, Item.Carotte, (5, 32)),
-            new Objet(false, Item.Carotte, (10, 33)),
-            new Objet(false, Item.Carotte, (11, 33)),
-            new Objet(false, Item.Carotte, (11, 38)),
-            new Objet(false, Item.Carotte, (14, 21)),
-            new Objet(false, Item.Carotte, (16, 12)),
-
-            new Objet(true, Item.Bloc, (1, 34)),
-            new Objet(true, Item.Bloc, (2, 30)),
-            new Objet(true, Item.Bloc, (2, 18)),
-            new Objet(true, Item.Bloc, (3, 49)),
-            new Objet(true, Item.Bloc, (4, 49)),
-            new Objet(true, Item.Bloc, (4, 16)),
-            new Objet(true, Item.Bloc, (5, 6)),
-            new Objet(true, Item.Bloc, (5, 14)),
-            new Objet(true, Item.Bloc, (5, 20)),
-            new Objet(true, Item.Bloc, (5, 36)),
-            new Objet(true, Item.Bloc, (8, 31)),
-            new Objet(true, Item.Bloc, (8, 49)),
-            new Objet(true, Item.Bloc, (9, 22)),
-            new Objet(true, Item.Bloc, (9, 36)),
-            new Objet(true, Item.Bloc, (10, 18)),
-            new Objet(true, Item.Bloc, (10, 20)),
-            new Objet(true, Item.Bloc, (11, 7)),
-            new Objet(true, Item.Bloc, (11, 26)),
-            new Objet(true, Item.Bloc, (12, 10)),
-            new Objet(true, Item.Bloc, (13, 10)),
-            new Objet(true, Item.Bloc, (14, 21)),
-            new Objet(true, Item.Bloc, (14, 26)),
-            new Objet(true, Item.Bloc, (15, 9)),
-            new Objet(true, Item.Bloc, (15, 10)),
-            new Objet(true, Item.Bloc, (15, 27)),
-            new Objet(true, Item.Bloc, (16, 38)),
-            new Objet(true, Item.Bloc, (17, 6)),
-            new Objet(true, Item.Bloc, (17, 11)),
-            new Objet(true, Item.Bloc, (17, 18)),
-
-            new Objet(false, Item.Tortue, (9, 25))
-        });
-
-        static void AfficherDonjon(Donjon donjon)
-        {
-            throw new NotImplementedException();
+            Console.WriteLine("[AH] Bravo, vous avez réussi la quête!");
+            Console.WriteLine("[AH] Au revoir!");
+            break;
         }
-        
-        /// <sumary>
-        /// Affiche le déplacement de la tortue.
-        /// le héros
-        /// le déplacement
-        /// </sumary>
-        static void DéplacementTortue(Direction direction)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <sumary>
-        /// Affiche le nb de points
-        /// renvoie le nombre de points
-        /// </sumary>
-        static void AfficherPoints(out int nbPoints)
-        {
-            throw new NotImplementedException();
-        }
-
+    }
 }
 
-record Donjon(Taille taille, List<Objet> objet);
-record Objet(bool blocBlanc, Item item, (int largeur, int longueur) Position);
-enum Taille { _50x17, _75x25, _80x20 }
-enum Item { Carotte, Tortue, Bloc }
-enum Direction { Bas, Haut, Gauche, Droite }
+static Position DonjonAléatoire(out Position position_heros, out Position[] position_tresors, out Position[] position_blocs)
+{
+    int largeur = new Random().Next(20, 40);
+    int hauteur = new Random().Next(10, 20);
+    position_heros = new Position((largeur / 2), (hauteur / 2));
+    PositionAléatoireLibre(largeur, hauteur, out Position[] tresors, out Position[] blocs);
+    position_blocs = blocs;
+    position_tresors = tresors;
+    return new Position(largeur, hauteur);
+}
 
+static void PositionAléatoireLibre(int larg, int haut, out Position[] trésors, out Position[] blocs)
+{
+    blocs = new[] {
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+    };
+
+    trésors = new[] {
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+    };
+
+    for (int i = 0; i > 0;)
+    {
+        foreach (Position b in blocs)
+        {
+            foreach (Position t in trésors)
+            {
+                if (t == b || t == new Position((larg / 2), (haut / 2)) || b == new Position((larg / 2), (haut / 2)))
+                {
+                    trésors = new[] {
+                        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+                        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+                        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+                        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+                        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+                        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+                        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+                        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+                        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+                        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+                    };
+                }
+                else
+                    i++;
+            }
+        }
+    }
+}
+
+static void AfficherDonjon(Position tailleDonjon, Position[] tresors, Position[] blocs, Position héros, int nombre_tresors)
+{
+    Console.WriteLine($"[AH] {nombre_tresors} trésor{(nombre_tresors > 1 ? "s" : "")} restant{(nombre_tresors > 1 ? "s" : "")}                ");
+    Console.WriteLine();
+    Console.WriteLine($"[AH] {new String('█', (tailleDonjon.largeur * 2) + 4)}");
+    for (int i = 0; i < tailleDonjon.hauteur; i++)
+    {
+        Console.Write("[AH] ██");
+        for (int j = 0; j < tailleDonjon.largeur; j++)
+        {
+            Position pos = new Position(j, i);
+            bool positionSuivante = false;
+            foreach (Position b in blocs)
+                if (b == pos)
+                {
+                    Console.Write("██");
+                    positionSuivante = true;
+                    break;
+                }
+            foreach (Position t in tresors)
+            {
+                if (t == pos)
+                {
+                    Console.Write("TT");
+                    positionSuivante = true;
+                    break;
+                }
+            }
+            if (héros == pos)
+            {
+                Console.Write("HH");
+                positionSuivante = true;
+            }
+            if (!positionSuivante)
+                Console.Write("  ");
+        }
+        Console.Write("██");
+        Console.Write("\n");
+    }
+    Console.WriteLine($"[AH] {new String('█', (tailleDonjon.largeur * 2) + 4)}");
+}
+
+static Position DéplacerHéros(ref Position[] position_tresors, Position[] position_blocs, Position tailleDonjon, Position position_heros, ref int nombre_trésors)
+{
+    Position mouv = LireDirection();
+    if (PositionEstAccessible(tailleDonjon, mouv, position_blocs, position_heros))
+    {
+        position_heros = new Position(position_heros.largeur + mouv.largeur, position_heros.hauteur + mouv.hauteur);
+    }
+    foreach (Position t in position_tresors)
+    {
+        if (position_heros == t)
+        {
+            var pos_trésor = new List<Position>(position_tresors);
+            pos_trésor.RemoveAt(Array.IndexOf(position_tresors, position_heros));
+            position_tresors = pos_trésor.ToArray();
+            nombre_trésors--;
+        }
+    }
+    return position_heros;
+}
+
+static bool PositionEstAccessible(Position tailleDonjon, Position mouvement, Position[] position_blocs, Position position_heros)
+{
+    Position newPosition = new Position(position_heros.largeur + mouvement.largeur, position_heros.hauteur + mouvement.hauteur);
+    foreach (Position b in position_blocs)
+    {
+        if (newPosition == b)
+            return false;
+    }
+    if ((newPosition.hauteur + 1) == 0 || (newPosition.largeur + 1) == 0 || newPosition.hauteur == tailleDonjon.hauteur || newPosition.largeur == tailleDonjon.largeur)
+        return false;
+    return true;
+}
+
+static Position LireDirection()
+{
+    ConsoleKeyInfo keyInfo;
+    Position mouvement = new Position(0, 0);
+    do
+    {
+        keyInfo = Console.ReadKey(true);
+        if (keyInfo.Key == ConsoleKey.UpArrow)
+            mouvement = new Position(0, -1);
+        if (keyInfo.Key == ConsoleKey.DownArrow)
+            mouvement = new Position(0, 1);
+        if (keyInfo.Key == ConsoleKey.LeftArrow)
+            mouvement = new Position(-1, 0);
+        if (keyInfo.Key == ConsoleKey.RightArrow)
+            mouvement = new Position(1, 0);
+        if (keyInfo.Key == ConsoleKey.Escape)
+        {
+            Console.WriteLine("[AH] Au revoir!");
+            Environment.Exit(0);
+        }
+    }
+    while (mouvement == new Position(0, 0));
+    return mouvement;
+}
+record Position(int largeur, int hauteur);
