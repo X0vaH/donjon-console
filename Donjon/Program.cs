@@ -1,22 +1,51 @@
-﻿Piloter();
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+
+const string filename = "donjon.json";
+Piloter();
 
 static void Piloter()
 {
     Console.Clear();
-    int nbTrésors = 10;
-    Position tailleDonjon = DonjonAléatoire(out Position position_heros, out Position[] position_tresors, out Position[] position_blocs);
+    JeuDonjon donjon;
+    // bloc de code pour initialiser
+    {
+        Position tailleDonjon = DonjonAléatoire(out Position position_heros, out Position[] position_tresors, out Position[] position_blocs);
+         donjon = new JeuDonjon(tailleDonjon, position_heros, position_blocs, position_tresors);
+    }
+
+    if (File.Exists(filename))
+    {
+        string json = File.ReadAllText(filename);
+        donjon = JsonSerializer.Deserialize<JeuDonjon>(json) ?? donjon;
+    }
     for (; ; )
     {
         Console.SetCursorPosition(0, 0);
-        AfficherDonjon(tailleDonjon, position_tresors, position_blocs, position_heros, nbTrésors);
-        position_heros = DéplacerHéros(ref position_tresors, position_blocs, tailleDonjon, position_heros, ref nbTrésors);
-        if (nbTrésors == 0)
+        AfficherDonjon(donjon);
+        donjon = DéplacerHéros(donjon, out bool abandon, out bool exit);
+        if (donjon.Trésors.Length == 0)
         {
             Console.WriteLine("[AH] Bravo, vous avez réussi la quête!");
             Console.WriteLine("[AH] Au revoir!");
+            File.Delete(filename);
             break;
         }
+        if (exit)
+        {
+            string json = JsonSerializer.Serialize(donjon);
+            File.WriteAllText(filename, json);
+            Environment.Exit(1);
+        }
+        if (abandon)
+        {
+            File.Delete(filename);
+            Environment.Exit(1);
+        }
     }
+
+    // Sérialiser puis sauvegarder si la partie n'est pas terminée, sinon supprimer le fichier.
+
 }
 
 static Position DonjonAléatoire(out Position position_heros, out Position[] position_tresors, out Position[] position_blocs)
@@ -84,6 +113,7 @@ static void PositionAléatoireLibre(int larg, int haut, out Position[] trésors,
         {
             foreach (Position t in trésors)
             {
+                    // faire list avec une boucle et un contains bcp mieux!
                 if (t == b || t == new Position((larg / 2), (haut / 2)) || b == new Position((larg / 2), (haut / 2)))
                 {
                     trésors = new[] {
@@ -106,14 +136,15 @@ static void PositionAléatoireLibre(int larg, int haut, out Position[] trésors,
     }
 }
 
-static void AfficherDonjon(Position tailleDonjon, Position[] tresors, Position[] blocs, Position héros, int nombre_tresors)
+static void AfficherDonjon(JeuDonjon donjon)
 {
-    Console.WriteLine($"[AH] {nombre_tresors} trésor{(nombre_tresors > 1 ? "s" : "")} restant{(nombre_tresors > 1 ? "s" : "")}                ");
-    Console.WriteLine();
-    Console.WriteLine($"[AH] {new String('█', (tailleDonjon.largeur * 2) + 4)}");
+    var (tailleDonjon, héros, blocs, tresors) = donjon;
+    string strdonjon = $"[AH] {tresors.Length} trésor{(tresors.Length > 1 ? "s" : "")} restant{(tresors.Length > 1 ? "s" : "")}    " + "\n";
+    strdonjon += "\n";
+    strdonjon += $"[AH] {new String('█', (tailleDonjon.largeur * 2) + 4)}\n";
     for (int i = 0; i < tailleDonjon.hauteur; i++)
     {
-        Console.Write("[AH] ██");
+        strdonjon += "[AH] ██";
         for (int j = 0; j < tailleDonjon.largeur; j++)
         {
             Position pos = new Position(j, i);
@@ -121,36 +152,37 @@ static void AfficherDonjon(Position tailleDonjon, Position[] tresors, Position[]
             foreach (Position b in blocs)
                 if (b == pos)
                 {
-                    Console.Write("██");
+                    strdonjon += "██";
                     positionSuivante = true;
                     break;
                 }
-            foreach (Position t in tresors)
+            if (!positionSuivante) foreach (Position t in tresors)
             {
                 if (t == pos)
                 {
-                    Console.Write("TT");
+                    strdonjon += "TT";
                     positionSuivante = true;
                     break;
                 }
             }
-            if (héros == pos)
+            if (!positionSuivante) if (héros == pos)
             {
-                Console.Write("HH");
+                strdonjon += "HH";
                 positionSuivante = true;
             }
             if (!positionSuivante)
-                Console.Write("  ");
+                strdonjon += "  ";
         }
-        Console.Write("██");
-        Console.Write("\n");
+        strdonjon += "██" + "\n";
     }
-    Console.WriteLine($"[AH] {new String('█', (tailleDonjon.largeur * 2) + 4)}");
+    strdonjon += $"[AH] {new String('█', (tailleDonjon.largeur * 2) + 4)}\n";
+    Console.WriteLine(strdonjon);
 }
 
-static Position DéplacerHéros(ref Position[] position_tresors, Position[] position_blocs, Position tailleDonjon, Position position_heros, ref int nombre_trésors)
+static JeuDonjon DéplacerHéros(JeuDonjon donjon, out bool abandon, out bool exit)
 {
-    Position mouv = LireDirection();
+    var (tailleDonjon, position_heros, position_blocs, position_tresors) = donjon;
+    Position mouv = LireDirection(out abandon, out exit);
     if (PositionEstAccessible(tailleDonjon, mouv, position_blocs, position_heros))
     {
         position_heros = new Position(position_heros.largeur + mouv.largeur, position_heros.hauteur + mouv.hauteur);
@@ -162,10 +194,9 @@ static Position DéplacerHéros(ref Position[] position_tresors, Position[] posi
             var pos_trésor = new List<Position>(position_tresors);
             pos_trésor.RemoveAt(Array.IndexOf(position_tresors, position_heros));
             position_tresors = pos_trésor.ToArray();
-            nombre_trésors--;
         }
     }
-    return position_heros;
+    return new (tailleDonjon, position_heros, position_blocs, position_tresors);
 }
 
 static bool PositionEstAccessible(Position tailleDonjon, Position mouvement, Position[] position_blocs, Position position_heros)
@@ -181,9 +212,11 @@ static bool PositionEstAccessible(Position tailleDonjon, Position mouvement, Pos
     return true;
 }
 
-static Position LireDirection()
+static Position LireDirection(out bool abandon, out bool exit)
 {
     ConsoleKeyInfo keyInfo;
+    abandon = false;
+    exit = false;
     Position mouvement = new Position(0, 0);
     do
     {
@@ -198,11 +231,19 @@ static Position LireDirection()
             mouvement = new Position(1, 0);
         if (keyInfo.Key == ConsoleKey.Escape)
         {
+            Console.WriteLine("[AH] Nous continuerons plus tard...\n");
             Console.WriteLine("[AH] Au revoir!");
-            Environment.Exit(0);
+            exit = true;
+        }
+        if (keyInfo.Key == ConsoleKey.Q)
+        {
+            Console.WriteLine("[AH] Quel dommage d'abandonner!");
+            Console.WriteLine("[AH] Au revoir!");
+            abandon = true;
         }
     }
     while (mouvement == new Position(0, 0));
     return mouvement;
 }
 record Position(int largeur, int hauteur);
+record JeuDonjon(Position Taille, Position Héros, Position[] Obstacles, Position[] Trésors);
