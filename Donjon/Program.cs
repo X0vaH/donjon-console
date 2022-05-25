@@ -8,10 +8,9 @@ static void Piloter()
 {
     Console.Clear();
     JeuDonjon donjon;
-    // bloc de code pour initialiser
     {
-        Position tailleDonjon = DonjonAléatoire(out Position position_heros, out Position[] position_tresors, out Position[] position_blocs, out Position[] position_pièges);
-         donjon = new JeuDonjon(tailleDonjon, position_heros, position_blocs, position_tresors, position_pièges);
+        Position tailleDonjon = DonjonAléatoire(out Position position_heros, out Position[] position_tresors, out Position[] position_blocs, out Position[] position_pièges, out Position position_monstre);
+         donjon = new JeuDonjon(tailleDonjon, position_heros, position_blocs, position_tresors, position_pièges, position_monstre);
     }
 
     if (File.Exists(filename))
@@ -23,7 +22,7 @@ static void Piloter()
     {
         Console.SetCursorPosition(0, 0);
         AfficherDonjon(donjon);
-        donjon = DéplacerHéros(donjon, out bool abandon, out bool exit, out bool piège);
+        donjon = DéplacerHéros(donjon, out bool abandon, out bool exit, out bool piège, out bool monstre);
         if (donjon.Trésors.Length == 0)
         {
             Console.WriteLine("[AH] Bravo, vous avez réussi la quête!");
@@ -49,22 +48,30 @@ static void Piloter()
             File.Delete(filename);
             Environment.Exit(1);
         }
+        if (monstre)
+        {
+            Console.WriteLine("[AH] Hélas, vous êtes mort... La vie est si courte!");
+            Console.WriteLine("[AH] Au revoir!");
+            File.Delete(filename);
+            Environment.Exit(1);
+        }
     }
 }
 
-static Position DonjonAléatoire(out Position position_heros, out Position[] position_tresors, out Position[] position_blocs, out Position[] position_pièges)
+static Position DonjonAléatoire(out Position position_heros, out Position[] position_tresors, out Position[] position_blocs, out Position[] position_pièges, out Position position_monstre)
 {
     int largeur = new Random().Next(20, 40);
     int hauteur = new Random().Next(10, 20);
     position_heros = new Position((largeur / 2), (hauteur / 2));
-    PositionAléatoireLibre(largeur, hauteur, out Position[] tresors, out Position[] blocs, out Position[] pièges);
+    PositionAléatoireLibre(largeur, hauteur, out Position[] tresors, out Position[] blocs, out Position[] pièges, out Position monstre);
     position_blocs = blocs;
     position_tresors = tresors;
     position_pièges = pièges;
+    position_monstre = monstre;
     return new Position(largeur, hauteur);
 }
 
-static void PositionAléatoireLibre(int larg, int haut, out Position[] trésors, out Position[] blocs, out Position[] pièges)
+static void PositionAléatoireLibre(int larg, int haut, out Position[] trésors, out Position[] blocs, out Position[] pièges, out Position monstre)
 {
     blocs = new[] {
         new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
@@ -131,6 +138,7 @@ static void PositionAléatoireLibre(int larg, int haut, out Position[] trésors,
                         new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
                         new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
                         new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
+                        new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
                     };
                 }
                 else
@@ -160,7 +168,7 @@ static void PositionAléatoireLibre(int larg, int haut, out Position[] trésors,
             {
                 foreach (Position p in pièges)
                 {
-                    if (p == b || p == t || p == new Position((larg / 2), (haut / 2)) || b == new Position((larg / 2), (haut / 2)))
+                    if (p == b || p == t || p == new Position((larg / 2), (haut / 2)) || p == new Position((larg / 2), (haut / 2)))
                     {
                         pièges = new[] {
                             new Position(new Random().Next(0, larg), new Random().Next(0, haut)),
@@ -183,11 +191,32 @@ static void PositionAléatoireLibre(int larg, int haut, out Position[] trésors,
             }
         }
     }
+
+    monstre = new Position(new Random().Next(0, larg), new Random().Next(0, haut));
+
+    for (int i = 0; i > 0;)
+    {
+        foreach (Position b in blocs)
+        {
+            foreach (Position t in trésors)
+            {
+                foreach (Position p in pièges)
+                {
+                    if (monstre == p || monstre == b || monstre == t || monstre == new Position((larg / 2), (haut / 2)) || monstre == new Position((larg / 2), (haut / 2)))
+                    {
+                        monstre = new Position(new Random().Next(0, larg), new Random().Next(0, haut));
+                    }
+                    else
+                        i++;
+                }
+            }
+        }
+    }
 }
 
 static void AfficherDonjon(JeuDonjon donjon)
 {
-    var (tailleDonjon, héros, blocs, tresors, pièges) = donjon;
+    var (tailleDonjon, héros, blocs, tresors, pièges, monstre) = donjon;
     string strdonjon = $"[AH] {tresors.Length} trésor{(tresors.Length > 1 ? "s" : "")} restant{(tresors.Length > 1 ? "s" : "")}    " + "\n";
     strdonjon += "\n";
     strdonjon += $"[AH] {new String('█', (tailleDonjon.largeur * 2) + 4)}\n";
@@ -223,6 +252,11 @@ static void AfficherDonjon(JeuDonjon donjon)
                     break;
                 }
             }
+            if (!positionSuivante) if (pos == monstre)
+            {
+                strdonjon += "MM";
+                positionSuivante = true;
+            }
             if (!positionSuivante) if (héros == pos)
             {
                 strdonjon += "HH";
@@ -237,10 +271,55 @@ static void AfficherDonjon(JeuDonjon donjon)
     Console.WriteLine(strdonjon);
 }
 
-static JeuDonjon DéplacerHéros(JeuDonjon donjon, out bool abandon, out bool exit, out bool piège)
+static Position DéplacerMonstre(JeuDonjon donjon)
 {
-    var (tailleDonjon, position_heros, position_blocs, position_tresors, position_pièges) = donjon;
+    var (tailleDonjon, héros, blocs, tresors, pièges, monstre) = donjon;
+    var newPosition = new Position(monstre.largeur, monstre.hauteur);
+    bool libre = true;
+    if (monstre.hauteur > héros.hauteur)
+    {
+        newPosition.hauteur--;
+    }
+    else if (monstre.hauteur < héros.hauteur)
+    {
+        newPosition.hauteur++;
+    }
+    else if (monstre.largeur > héros.largeur)
+    {
+        newPosition.largeur--;
+    }
+    else if (monstre.largeur < héros.largeur)
+    {
+        newPosition.largeur++;
+    }
+    
+    foreach (Position b in blocs)
+    {
+        if (newPosition == b)
+            libre = false;
+    }
+    foreach (Position p in pièges)
+    {
+        if (newPosition == p)
+            libre = false;
+    }
+    foreach (Position t in tresors)
+    {
+        if (newPosition == t)
+            libre = false;
+    }
+
+    if (!libre)
+        return monstre;
+    else
+        return newPosition;
+}
+
+static JeuDonjon DéplacerHéros(JeuDonjon donjon, out bool abandon, out bool exit, out bool piège, out bool monstre)
+{
+    var (tailleDonjon, position_heros, position_blocs, position_tresors, position_pièges, position_monstre) = donjon;
     piège = false;
+    monstre = false;
     Position mouv = LireDirection(out abandon, out exit);
     if (PositionEstAccessible(tailleDonjon, mouv, position_blocs, position_heros))
     {
@@ -260,7 +339,12 @@ static JeuDonjon DéplacerHéros(JeuDonjon donjon, out bool abandon, out bool ex
         if (position_heros == p)
             piège = true;
     }
-    return new (tailleDonjon, position_heros, position_blocs, position_tresors, position_pièges);
+    if (position_heros == position_monstre)
+    {
+        monstre = true;
+    }
+    position_monstre = DéplacerMonstre(donjon);
+    return new (tailleDonjon, position_heros, position_blocs, position_tresors, position_pièges, position_monstre);
 }
 
 static bool PositionEstAccessible(Position tailleDonjon, Position mouvement, Position[] position_blocs, Position position_heros)
@@ -305,9 +389,17 @@ static Position LireDirection(out bool abandon, out bool exit)
             Console.WriteLine("[AH] Au revoir!");
             abandon = true;
         }
+        if (keyInfo.Key == ConsoleKey.Spacebar)
+        {
+            break;
+        }
     }
     while (mouvement == new Position(0, 0));
     return mouvement;
 }
-record Position(int largeur, int hauteur);
-record JeuDonjon(Position Taille, Position Héros, Position[] Obstacles, Position[] Trésors, Position[] Pièges);
+record Position(int largeur, int hauteur)
+{
+    public int largeur { get; set; } = largeur;
+    public int hauteur { get; set; } = hauteur;
+}
+record JeuDonjon(Position Taille, Position Héros, Position[] Obstacles, Position[] Trésors, Position[] Pièges, Position Monstre);
